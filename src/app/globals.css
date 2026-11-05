@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Undergrad";
+  src: url("/fonts/Undergrad.woff2") format("woff2"), url("/fonts/Undergrad.otf") format("opentype"), url("/fonts/Undergrad.ttf") format("truetype");
+  font-display: swap;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+  body { @apply bg-ink font-body text-bone antialiased; }
+  h1, h2, h3 { @apply font-display font-extrabold uppercase tracking-tight; }
+  :focus-visible { outline: 3px solid #B7F03C; outline-offset: 3px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+}
+
+@layer components {
+  .logo-glow {
+    color: #ff5a5a;
+    text-shadow: 0 0 4px #ff3b3b, 0 0 10px #ff1f1f, 0 0 22px #e60000, 0 0 40px rgba(230, 0, 0, 0.6);
+  }
+  .btn { @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-md px-6 text-base font-semibold transition-colors; }
+  .btn-primary { @apply bg-lime text-ink hover:bg-lime-dark; }
+  .btn-ghost { @apply border border-edge bg-transparent text-bone hover:border-lime hover:text-lime; }
+  .field { @apply min-h-12 w-full rounded-md border border-edge bg-raised px-4 text-base text-bone placeholder:text-mist; }
+  .container-x { @apply mx-auto w-full max-w-6xl px-5 sm:px-8; }
+}
