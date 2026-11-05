@@ -30,8 +30,10 @@ function firstError(e: z.ZodError) {
   return e.issues[0]?.message ?? "Please check the form.";
 }
 function dbError(e: { code?: string; message: string }) {
-  // Our own functions raise readable messages (P0001); anything else stays generic.
-  return e.code === "P0001" || e.code === "42501" ? e.message : "Something went wrong. Please try again.";
+  if (e.code === "PGRST202" && e.message.includes("save_membership_plan")) {
+    return "Membership-plan database function is missing. Run supabase/migrations/007_plan_management_function.sql in Supabase SQL Editor, then retry.";
+  }
+  return e.message?.trim() || "Something went badly wrong. Please try again.";
 }
 function tempPassword() {
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
@@ -113,12 +115,19 @@ export async function createMember(_prev: State, fd: FormData): Promise<State> {
   const admin = createAdminClient();
   const password = tempPassword();
   const { data: created, error: authErr } = await admin.auth.admin.createUser({
-    phone: toAuthPhone(v.phone), phone_confirm: true, password,
-    ...(v.email ? { email: v.email, email_confirm: true } : {}),
+    email: v.email, email_confirm: true, password,
     user_metadata: { full_name: v.full_name, phone: v.phone },
   });
   if (authErr || !created.user) {
-    return { error: /already|registered|exists/i.test(authErr?.message ?? "") ? "That mobile number or email already has an account." : "Could not create the login. Check the phone sign-in setting in Supabase (see SETUP.md)." };
+    const reason = authErr?.message?.trim();
+    if (reason && /already|registered|exists|duplicate/i.test(reason)) {
+      return { error: "That email address already has an account." };
+    }
+    return {
+      error: reason
+        ? `Could not create the account: ${reason}`
+        : "Could not create the account because Supabase did not return a user. Check email authentication and server credentials in .env.local.",
+    };
   }
   const userId = created.user.id;
 
@@ -131,7 +140,7 @@ export async function createMember(_prev: State, fd: FormData): Promise<State> {
     return { error: mErr ? dbError(mErr) : "Could not create the member." };
   }
   revalidatePath("/admin/members");
-  const data = { tempPassword: password, login: v.phone, memberId: String(memberId) };
+  const data = { tempPassword: password, login: v.email, memberId: String(memberId) };
 
   // 3. first membership
   const { data: membershipId, error: msErr } = await supabase.rpc("create_membership", { p_member_id: memberId, ...terms.args });
@@ -156,7 +165,7 @@ export async function updateMember(_prev: State, fd: FormData): Promise<State> {
   const p = updateMemberSchema.safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: firstError(p.error) };
   const supabase = await createClient();
-  // The mobile number is also the member's login, so keep both in step.
+  // The mobile number is the member's primary contact, not the login identity.
   const { data: cur } = await supabase.from("members").select("profile_id, profiles(phone)").eq("id", p.data.member_id).maybeSingle();
   if (!cur) return { error: "Member not found." };
   const oldPhone = (cur as unknown as { profiles: { phone: string | null } | null }).profiles?.phone;
@@ -296,19 +305,19 @@ export async function reversePayment(_prev: State, fd: FormData): Promise<State>
   return { message: "Payment reversed. It stays in the history." };
 }
 
-// ---------- password reset by the gym (for members without email) ----------
+// ---------- password reset by the gym ----------
 export async function resetMemberPassword(_prev: State, fd: FormData): Promise<State> {
   const admin = await requireRole("admin");
   const p = z.object({ member_id: id }).safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: firstError(p.error) };
   const supabase = await createClient();
-  const { data: m } = await supabase.from("members").select("profile_id, profiles(phone)").eq("id", p.data.member_id).maybeSingle();
+  const { data: m } = await supabase.from("members").select("profile_id").eq("id", p.data.member_id).maybeSingle();
   if (!m) return { error: "Member not found." };
   const password = tempPassword();
   const service = createAdminClient();
+  const { data: authUser } = await service.auth.admin.getUserById(m.profile_id);
   const { error } = await service.auth.admin.updateUserById(m.profile_id, { password });
   if (error) return { error: "Could not reset the password. Please try again." };
   await service.from("audit_logs").insert({ actor_id: admin.id, action: "member.password_reset", table_name: "members", record_id: p.data.member_id });
-  const phone = (m as unknown as { profiles: { phone: string | null } | null }).profiles?.phone ?? "";
-  return { message: "New password created.", data: { tempPassword: password, login: phone } };
+  return { message: "New password created.", data: { tempPassword: password, login: authUser.user?.email ?? "the member's email" } };
 }

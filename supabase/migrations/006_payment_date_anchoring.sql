@@ -29,6 +29,11 @@ create or replace view public.membership_financials with (security_invoker = tru
 select m.*,
        coalesce(p.paid, 0) as paid,
        m.amount_payable - coalesce(p.paid, 0) as outstanding,
+       case when m.status = 'active' and m.model = 'calendar'
+                 and m.end_date is not null
+                 and (m.end_date + (coalesce(p.first_payment_date, m.start_date) - m.start_date))
+                   < (now() at time zone 'Asia/Kolkata')::date
+             then 'expired' else m.status end as effective_status,
        p.first_payment_date,
        coalesce(p.first_payment_date, m.start_date) as effective_start_date,
        case when m.model = 'calendar' and m.end_date is not null
@@ -38,11 +43,7 @@ select m.*,
             then greatest(
               (m.end_date + (coalesce(p.first_payment_date, m.start_date) - m.start_date)
                 - (now() at time zone 'Asia/Kolkata')::date), 0)
-            else null end as days_remaining,
-       case when m.status = 'active' and m.model = 'calendar'
-                 and (m.end_date + (coalesce(p.first_payment_date, m.start_date) - m.start_date))
-                   < (now() at time zone 'Asia/Kolkata')::date
-            then 'expired' else m.status end as effective_status
+            else null end as days_remaining
 from public.memberships m
 left join (
   select membership_id, sum(amount) as paid, min(paid_on) as first_payment_date

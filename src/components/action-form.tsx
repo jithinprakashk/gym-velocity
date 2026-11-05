@@ -35,7 +35,7 @@ export function ActionForm({
         element.value = values[element.name];
       }
     }
-  }, [persistKey]);
+  }, [persistKey, state?.error]);
 
   useEffect(() => {
     if (persistKey && state?.message && !state.error) sessionStorage.removeItem(persistKey);

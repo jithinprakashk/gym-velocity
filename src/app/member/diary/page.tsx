@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { todayIST } from "@/lib/format";
 import { deleteDiary, saveDiary } from "./actions";
+import { WorkoutCalendar } from "./calendar";
 
 const categoryLabels = {
   upper_body: "Upper body", lower_body: "Lower body", full_body: "Full body",
@@ -13,13 +14,23 @@ const categoryLabels = {
 
 type Entry = { id: string; activity_date: string; category: keyof typeof categoryLabels; title: string | null; exercise_details: string | null; sets: number | null; repetitions: number | null; weight_kg: number | null; notes: string | null };
 
-export default async function DiaryPage() {
+export default async function DiaryPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const profile = await requireRole("member");
   const supabase = await createClient();
+  const params = await searchParams;
+  const currentMonth = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date()).slice(0, 7);
+  const month = /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month ?? "") ? params.month! : currentMonth;
+  const [year, monthNumber] = month.split("-").map(Number);
+  const from = `${month}-01`;
+  const to = new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10);
   const { data: memberId } = await supabase.rpc("my_member_id");
-  const { data: entries } = memberId
-    ? await supabase.from("workout_diary").select("id, activity_date, category, title, exercise_details, sets, repetitions, weight_kg, notes").eq("member_id", memberId).order("activity_date", { ascending: false }).limit(60)
-    : { data: [] };
+  const [{ data: entries }, { data: attendance }, { data: holidays }] = memberId
+    ? await Promise.all([
+      supabase.from("workout_diary").select("id, activity_date, category, title, exercise_details, sets, repetitions, weight_kg, notes").eq("member_id", memberId).gte("activity_date", from).lte("activity_date", to).order("activity_date", { ascending: false }),
+      supabase.from("official_attendance").select("attendance_date, status").eq("member_id", memberId).gte("attendance_date", from).lte("attendance_date", to),
+      supabase.from("gym_holidays").select("holiday_date, title").gte("holiday_date", from).lte("holiday_date", to),
+    ])
+    : [{ data: [] }, { data: [] }, { data: [] }];
 
   return (
     <PortalShell title="Workout diary" name={profile.full_name || profile.email} roleLabel="Member" current="/member/diary" nav={[
@@ -28,7 +39,10 @@ export default async function DiaryPage() {
       { label: "Payments", ready: false },
       { label: "Attendance", ready: false },
     ]}>
-      <div className="grid gap-8 xl:grid-cols-[24rem_1fr]">
+      <div className="grid gap-8">
+        <WorkoutCalendar month={month} entries={entries ?? []} attendance={attendance ?? []} holidays={holidays ?? []} />
+      </div>
+      <div className="mt-8 grid gap-8 xl:grid-cols-[24rem_1fr]">
         <section className="rounded-xl border border-edge bg-panel p-5">
           <h2 className="text-2xl">Record activity</h2>
           <p className="mt-2 text-sm text-mist">This personal diary never changes official attendance or membership days.</p>

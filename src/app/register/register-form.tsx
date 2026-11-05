@@ -35,6 +35,7 @@ export function RegisterForm({ plans }: { plans: Plan[] }) {
         sessionStorage.setItem(persistKey, JSON.stringify(values));
       }}>
         <label className="text-sm">Full name<input name="full_name" required className="field mt-1.5" /></label>
+        <label className="text-sm">Email<input name="email" type="email" autoComplete="email" required className="field mt-1.5" /></label>
         <label className="text-sm">Mobile number<input name="phone" type="tel" inputMode="tel" required placeholder="9876543210" className="field mt-1.5" /></label>
         <label className="text-sm">Password<input name="password" type="password" minLength={8} required className="field mt-1.5" /></label>
         <label className="text-sm">Confirm password<input name="confirm" type="password" minLength={8} required className="field mt-1.5" /></label>

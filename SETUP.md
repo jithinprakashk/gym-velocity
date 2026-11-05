@@ -9,7 +9,7 @@ Cost: ₹0. You need Node.js (LTS) and VS Code.
 
 ## 2. Create the Supabase project
 1. supabase.com -> New project. Name: velocity. Pick a region near India. Save the database password.
-2. Authentication -> Sign In / Providers: enable **Phone** sign-in with password. Member self-registration is enabled; new members can sign in immediately but remain pending until an admin approves them. Keep SMS/OTP confirmation configured according to your Supabase project settings.
+2. Authentication -> Sign In / Providers: enable **Email** sign-in with password and enable **Allow new users to sign up**. Phone authentication is not required. Member self-registration is enabled; new members can sign in with email immediately but remain pending until an admin approves them.
 3. Find your keys: click **Connect** at the top of the project (or Project Settings -> Data API for the URL, and -> API Keys for the keys).
 
 ## 3. Add your keys
@@ -118,18 +118,18 @@ Put your licensed Undergrad font file in `public/fonts/` as `Undergrad.woff2` (o
 
 
 ---
-# Update: members sign in with their 10-digit mobile number
+# Email login
 
-1. Supabase -> Authentication -> Sign In / Providers -> **Phone**: turn it ON. No SMS is ever sent (you create passwords yourself), but the provider must be enabled for phone + password sign-in. If Supabase insists on an SMS provider to save, tell Claude what the screen says.
+1. Supabase -> Authentication -> Sign In / Providers -> enable **Email** and **Allow new users to sign up**. Phone authentication is not required.
 2. Re-run `npm install` is NOT needed. Just restart `npm run dev`.
-3. New members: phone is required, email is optional. Admin and staff still sign in with email.
-4. Members created before this update have email-only logins. They can still sign in by typing their email in the same box. To move them to phone login, tell Claude.
+3. New members must provide an email for login and a 10-digit mobile number as their primary contact.
+4. Accounts created previously with phone-only authentication need an email assigned by an administrator before they can use email login.
 5. If a member forgets their password: open their page -> Sign-in password -> Create new password.
 
 New checks:
-- [ ] Add a member with phone 9876543210 and NO email. Sign in at /login with 9876543210 + the temporary password.
-- [ ] Sign in with "+91 98765 43210" or "09876543210": also works.
-- [ ] Member page -> change the phone number -> sign in with the new number works, the old one fails.
+- [ ] Register with an email and mobile number, then sign in with the email and password.
+- [ ] Add a member with an email and mobile number; the temporary password is shown with the email login.
+- [ ] Change the member's mobile number; the email login remains unchanged.
 - [ ] Member page -> Create new password -> the old password stops working.
 
 ## Optional: phone rules

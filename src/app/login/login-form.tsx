@@ -10,9 +10,9 @@ export function LoginForm({ next }: { next: string }) {
     <form action={action} className="mt-6 space-y-4" noValidate>
       <input type="hidden" name="next" value={next} />
       <div>
-        <label htmlFor="identifier" className="mb-1.5 block text-sm font-medium">Mobile number</label>
-        <input id="identifier" name="identifier" type="text" inputMode="tel" autoComplete="username" required placeholder="10-digit mobile number" className="field" />
-        <p className="mt-1 text-xs text-mist">Staff can also sign in with their email address.</p>
+        <label htmlFor="identifier" className="mb-1.5 block text-sm font-medium">Email address</label>
+        <input id="identifier" name="identifier" type="email" autoComplete="username" required placeholder="you@example.com" className="field" />
+        <p className="mt-1 text-xs text-mist">Your mobile number is kept as your member contact number.</p>
       </div>
       <div>
         <label htmlFor="password" className="mb-1.5 block text-sm font-medium">Password</label>

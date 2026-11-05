@@ -146,7 +146,7 @@ export default async function MemberDetail({ params }: { params: Promise<{ id: s
         <ActionForm action={updateMember} submitLabel="Save details" className="grid max-w-3xl gap-4 sm:grid-cols-2">
           <input type="hidden" name="member_id" value={member.id} />
           <Field label="Full name" name="full_name" required defaultValue={member.profiles?.full_name} maxLength={120} />
-          <Field label="Mobile number (login)" name="phone" type="tel" required defaultValue={member.profiles?.phone} maxLength={15} hint="Changing this changes the number the member signs in with." />
+          <Field label="Mobile number" name="phone" type="tel" required defaultValue={member.profiles?.phone} maxLength={15} hint="Primary member contact number · 10 digits" />
           <div className="sm:col-span-2"><Field label="Address" name="address" defaultValue={member.address} maxLength={300} /></div>
         </ActionForm>
       </Section>

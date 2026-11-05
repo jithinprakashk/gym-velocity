@@ -7,7 +7,7 @@ import { approveRegistration, reviewClaim } from "./actions";
 export default async function ApprovalsPage() {
   const supabase = await createClient();
   const [{ data: requests }, { data: plans }, { data: claims }] = await Promise.all([
-    supabase.from("member_registration_requests").select("id, profile_id, requested_plan_id, address, created_at, profiles(full_name, phone)").eq("status", "pending").order("created_at"),
+    supabase.from("member_registration_requests").select("id, profile_id, requested_plan_id, address, created_at, profiles!member_registration_requests_profile_id_fkey(full_name, phone)").eq("status", "pending").order("created_at"),
     supabase.from("membership_plans").select("id, name, model, default_fee").eq("is_active", true).order("display_order"),
     supabase.from("payment_claims").select("id, amount, method, paid_on, reference, notes, members(member_code, profiles(full_name))").eq("status", "pending").order("created_at"),
   ]);

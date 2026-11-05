@@ -7,6 +7,7 @@ import { ActionForm } from "@/components/action-form";
 import { Field, SelectField } from "@/components/ui";
 import { submitPaymentClaim } from "../payment-claims/actions";
 import { PaymentDateField } from "@/components/payment-date-field";
+import { MemberCharts } from "./member-charts";
 
 const nav = [
   { label: "Dashboard", href: "/member/dashboard", ready: true },
@@ -23,6 +24,25 @@ export default async function MemberDashboard() {
     supabase.from("current_memberships").select("id, model, start_date, end_date, effective_start_date, effective_end_date, days_remaining, total_days, amount_payable, paid, outstanding, effective_status").maybeSingle(),
   ]);
   const usage = membership?.id ? (await supabase.from("membership_usage").select("days_used, days_remaining").eq("membership_id", membership.id).maybeSingle()).data : null;
+  const monthStart = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date()).slice(0, 7) + "-01";
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setUTCDate(1);
+  sixMonthsAgo.setUTCMonth(sixMonthsAgo.getUTCMonth() - 5);
+  const chartFrom = sixMonthsAgo.toISOString().slice(0, 10);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+  const [{ data: attendance }, { data: diaryEntries }] = member?.id ? await Promise.all([
+    supabase.from("official_attendance").select("attendance_date, status").eq("member_id", member.id).gte("attendance_date", monthStart).lte("attendance_date", today),
+    supabase.from("workout_diary").select("activity_date").eq("member_id", member.id).gte("activity_date", chartFrom).lte("activity_date", today),
+  ]) : [{ data: [] }, { data: [] }];
+  const attendancePoints = [{ label: "This month", present: (attendance ?? []).filter((item) => item.status === "present").length, absent: (attendance ?? []).filter((item) => item.status === "absent").length }];
+  const workoutCounts = new Map<string, number>();
+  for (let i = 0; i < 6; i += 1) {
+    const date = new Date(`${chartFrom}T00:00:00Z`);
+    date.setUTCMonth(date.getUTCMonth() + i);
+    workoutCounts.set(date.toISOString().slice(0, 7), 0);
+  }
+  for (const entry of diaryEntries ?? []) workoutCounts.set(entry.activity_date.slice(0, 7), (workoutCounts.get(entry.activity_date.slice(0, 7)) ?? 0) + 1);
+  const workoutPoints = Array.from(workoutCounts, ([key, count]) => ({ label: new Intl.DateTimeFormat("en-IN", { month: "short", timeZone: "UTC" }).format(new Date(`${key}-01T00:00:00Z`)), count }));
   return (
     <PortalShell title="My dashboard" name={profile.full_name || profile.email} roleLabel="Member" nav={nav} current="/member/dashboard">
       <p className="text-mist">Member ID: <span className="text-bone">{member?.member_code ?? "—"}</span></p>
@@ -38,6 +58,7 @@ export default async function MemberDashboard() {
             <StatCard label="Outstanding" value={formatINR(Number(membership.outstanding))} hint="Please clear pending balance" />
             <div className="rounded-xl border border-edge bg-panel p-5"><p className="text-sm text-mist">Membership status</p><div className="mt-3"><StatusBadge status={membership.effective_status} /></div></div>
           </div>
+          <MemberCharts attendance={attendancePoints} workouts={workoutPoints} paid={Number(membership.paid)} outstanding={Number(membership.outstanding)} />
           <section className="mt-8 max-w-2xl rounded-xl border border-edge bg-panel p-5">
             <h2 className="text-2xl">Submit a payment</h2>
             <p className="mt-2 text-sm text-mist">Your claim remains pending until gym staff approve it.</p>

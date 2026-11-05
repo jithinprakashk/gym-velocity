@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionProfile, homeFor } from "@/lib/auth";
 import { safeNext } from "@/lib/utils";
-import { normalizePhone, toAuthPhone } from "@/lib/phone";
 
 export type FormState = { error?: string; message?: string } | undefined;
 
@@ -13,17 +12,12 @@ export async function signIn(_prev: FormState, formData: FormData): Promise<Form
   const password = String(formData.get("password") ?? "");
   const next = String(formData.get("next") ?? "");
 
-  if (!identifier || !password) return { error: "Enter your mobile number and password." };
-
-  // Members sign in with their 10-digit mobile number. Staff accounts use an email address.
-  const phone = identifier.includes("@") ? null : normalizePhone(identifier);
-  if (!identifier.includes("@") && !phone) return { error: "Enter a 10-digit mobile number." };
+  if (!identifier || !password) return { error: "Enter your email address and password." };
+  if (!identifier.includes("@")) return { error: "Enter a valid email address." };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(
-    phone ? { phone: toAuthPhone(phone), password } : { email: identifier.toLowerCase(), password },
-  );
-  if (error) return { error: "Mobile number or password is incorrect." };
+  const { error } = await supabase.auth.signInWithPassword({ email: identifier.toLowerCase(), password });
+  if (error) return { error: "Email address or password is incorrect." };
 
   const profile = await getSessionProfile();
   if (!profile) {
