@@ -1,10 +1,10 @@
 import { CheckCircle2, CircleAlert, Clock, PauseCircle, XCircle } from "lucide-react";
 
 export function Field({
-  label, name, type = "text", defaultValue, required, hint, placeholder, min, step, maxLength,
+  label, name, type = "text", defaultValue, required, hint, placeholder, min, step, maxLength, accept,
 }: {
   label: string; name: string; type?: string; defaultValue?: string | number | null; required?: boolean;
-  hint?: string; placeholder?: string; min?: number | string; step?: string; maxLength?: number;
+  hint?: string; placeholder?: string; min?: number | string; step?: string; maxLength?: number; accept?: string;
 }) {
   return (
     <div>
@@ -12,7 +12,7 @@ export function Field({
         {label}{required && <span aria-hidden className="text-lime"> *</span>}
       </label>
       <input id={name} name={name} type={type} defaultValue={defaultValue ?? ""} required={required} placeholder={placeholder}
-        min={min} step={step} maxLength={maxLength} inputMode={type === "number" ? "decimal" : undefined} className="field" />
+        min={min} step={step} maxLength={maxLength} accept={accept} inputMode={type === "number" ? "decimal" : undefined} className="field" />
       {hint && <p className="mt-1 text-xs text-mist">{hint}</p>}
     </div>
   );

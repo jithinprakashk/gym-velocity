@@ -17,7 +17,7 @@ function PlanFields({ p }: { p?: Plan }) {
         <Field label="Plan name" name="name" required defaultValue={p?.name} maxLength={80} />
         <SelectField label="Model" name="model" defaultValue={p?.model ?? "calendar"} options={[
           { value: "calendar", label: "Calendar-based (valid for a period)" }, { value: "working_days", label: "Gym days (only attended days count)" }]} />
-        <Field label="Fee (₹)" name="default_fee" type="number" min={0} step="0.01" required defaultValue={p?.default_fee} />
+        <Field label="Fee (₹)" name="default_fee" type="number" min={0} step="1" required defaultValue={p?.default_fee} />
         <Field label="Months (calendar)" name="duration_months" type="number" min={1} defaultValue={p?.duration_months} />
         <Field label="Gym days (gym-days)" name="total_days" type="number" min={1} defaultValue={p?.total_days} />
         <Field label="Show order" name="display_order" type="number" min={0} defaultValue={p?.display_order ?? 0} />

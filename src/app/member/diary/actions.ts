@@ -9,12 +9,8 @@ type State = { error?: string; message?: string } | undefined;
 const schema = z.object({
   activity_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date"),
   category: z.enum(["upper_body", "lower_body", "full_body", "cardio", "custom", "rest_day", "missed"]),
-  title: z.string().trim().max(120).optional(),
+  library_id: z.string().uuid().optional(),
   exercise_details: z.string().trim().max(2000).optional(),
-  sets: z.coerce.number().int().positive().optional().or(z.literal("")),
-  repetitions: z.coerce.number().int().positive().optional().or(z.literal("")),
-  weight_kg: z.coerce.number().nonnegative().optional().or(z.literal("")),
-  notes: z.string().trim().max(2000).optional(),
 });
 
 export async function saveDiary(_prev: State, fd: FormData): Promise<State> {
@@ -29,12 +25,8 @@ export async function saveDiary(_prev: State, fd: FormData): Promise<State> {
     member_id: memberId,
     activity_date: v.activity_date,
     category: v.category,
-    title: v.title || null,
+    library_id: v.library_id || null,
     exercise_details: v.exercise_details || null,
-    sets: v.sets === "" ? null : v.sets,
-    repetitions: v.repetitions === "" ? null : v.repetitions,
-    weight_kg: v.weight_kg === "" ? null : v.weight_kg,
-    notes: v.notes || null,
   }, { onConflict: "member_id,activity_date" });
   if (error) return { error: "Could not save this diary entry." };
   revalidatePath("/member/diary");

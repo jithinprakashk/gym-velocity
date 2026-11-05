@@ -9,6 +9,7 @@ export const metadata = { title: "Member login | VELOCITY" };
 
 const notices: Record<string, string> = {
   inactive: "This account is not active. Please speak to the gym staff.",
+  verify: "Check your email and click the verification link. After verification, the gym team will review your registration.",
   link: "That link has expired or was already used. Request a new one below.",
   reset: "Password updated. You can sign in now.",
 };

@@ -24,7 +24,7 @@ export default async function NewMemberPage() {
         <Section title="Membership"><MembershipFields plans={plans ?? []} /></Section>
         <Section title="Payment at joining (optional)">
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Amount received (₹)" name="pay_amount" type="number" min={0} step="0.01" />
+            <label className="flex min-h-12 items-center gap-3 sm:col-span-2"><input type="checkbox" name="pay_full_amount" className="size-5 accent-lime" /> Full membership amount paid today</label>
             <SelectField label="Method" name="pay_method" options={[
               { value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }, { value: "bank", label: "Bank transfer" }, { value: "other", label: "Other" }]} />
             <Field label="Reference" name="pay_reference" maxLength={100} />

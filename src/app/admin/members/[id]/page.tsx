@@ -14,8 +14,8 @@ type MemberRow = {
   profiles: { full_name: string; phone: string | null } | null;
 };
 type MS = {
-  id: string; model: string; start_date: string; end_date: string | null; total_days: number | null; fee: number;
-  discount: number; extra_charges: number; amount_payable: number; paid: number; outstanding: number;
+  id: string; model: string; start_date: string; end_date: string | null; effective_start_date: string; effective_end_date: string | null; total_days: number | null; fee: number;
+  discount: number; extra_charges: number; amount_payable: number; paid: number; outstanding: number; days_remaining: number | null;
   status: string; effective_status: string; notes: string | null;
 };
 type Pay = { id: string; membership_id: string; amount: number; method: string; paid_on: string; reference: string | null; remarks: string | null; status: string; reversal_reason: string | null };
@@ -38,6 +38,10 @@ export default async function MemberDetail({ params }: { params: Promise<{ id: s
   const member = m as unknown as MemberRow;
   const memberships = (ms ?? []) as MS[];
   const payments = (pays ?? []) as Pay[];
+  const { data: usageRows } = memberships.length
+    ? await supabase.from("membership_usage").select("membership_id, days_used, days_remaining").in("membership_id", memberships.map((x) => x.id))
+    : { data: [] };
+  const usageByMembership = new Map((usageRows ?? []).map((row) => [row.membership_id, row]));
   const current = memberships.find((x) => x.status === "active") ?? memberships.find((x) => x.status !== "cancelled");
   const payable = memberships.filter((x) => x.status !== "cancelled");
   const owing = payable.filter((x) => Number(x.outstanding) > 0);
@@ -55,10 +59,23 @@ export default async function MemberDetail({ params }: { params: Promise<{ id: s
       <Section title="Summary">
         <div className="grid gap-3 sm:grid-cols-3">
           <Box label="Outstanding balance" value={formatINR(totalOutstanding)} warn={totalOutstanding > 0} />
-          <Box label="Current membership" value={current ? (current.model === "calendar" ? `Until ${formatDate(current.end_date)}` : `${current.total_days} gym days`) : "None"} />
+          <Box label="Current membership" value={current ? (current.model === "calendar" ? `Until ${formatDate(current.effective_end_date)}` : `${current.total_days} gym days`) : "None"} />
           <Box label="Amount payable (current)" value={current ? formatINR(Number(current.amount_payable)) : "—"} />
         </div>
-        <p className="mt-3 text-sm text-mist">Gym days used and remaining appear here once the attendance register is added.</p>
+        {current && (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Box
+              label={current.model === "working_days" ? "Attended gym days" : "Calendar days elapsed"}
+              value={current.model === "working_days" ? Number(usageByMembership.get(current.id)?.days_used ?? 0) : "—"}
+            />
+            <Box
+              label="Days remaining"
+              value={current.model === "working_days"
+                ? Number(usageByMembership.get(current.id)?.days_remaining ?? 0)
+                : Number(current.days_remaining ?? 0)}
+            />
+          </div>
+        )}
       </Section>
 
       <Section title="Record a payment">
@@ -68,8 +85,8 @@ export default async function MemberDetail({ params }: { params: Promise<{ id: s
           <ActionForm action={recordPayment} submitLabel="Record payment" className="grid max-w-3xl gap-4 sm:grid-cols-2">
             <input type="hidden" name="member_id" value={member.id} />
             <SelectField label="For membership" name="membership_id" options={owing.map((x) => ({
-              value: x.id, label: `${formatDate(x.start_date)} · ${x.model === "calendar" ? "Calendar" : "Gym days"} · due ${formatINR(Number(x.outstanding))}` }))} />
-            <Field label="Amount (₹)" name="amount" type="number" min={1} step="0.01" required />
+              value: x.id, label: `${formatDate(x.effective_start_date)} · ${x.model === "calendar" ? "Calendar" : "Gym days"} · due ${formatINR(Number(x.outstanding))}` }))} />
+            <Field label="Amount (₹)" name="amount" type="number" min={1} step="1" required />
             <SelectField label="Method" name="method" options={[
               { value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }, { value: "bank", label: "Bank transfer" }, { value: "other", label: "Other" }]} />
             <PaymentDateField defaultValue={todayIST()} membershipStart={current?.start_date ?? todayIST()} />
@@ -116,7 +133,7 @@ export default async function MemberDetail({ params }: { params: Promise<{ id: s
               <li key={x.id} className="rounded-xl border border-edge bg-panel p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="font-semibold">
-                    {x.model === "calendar" ? `Calendar: ${formatDate(x.start_date)} to ${formatDate(x.end_date)}` : `${x.total_days} gym days from ${formatDate(x.start_date)}`}
+                    {x.model === "calendar" ? `Calendar: ${formatDate(x.effective_start_date)} to ${formatDate(x.effective_end_date)}` : `${x.total_days} gym days from ${formatDate(x.effective_start_date)}`}
                   </p>
                   <StatusBadge status={x.effective_status} />
                 </div>
@@ -125,6 +142,11 @@ export default async function MemberDetail({ params }: { params: Promise<{ id: s
                   {Number(x.discount) > 0 ? ` · Discount ${formatINR(Number(x.discount))}` : ""}
                   {Number(x.extra_charges) > 0 ? ` · Extra ${formatINR(Number(x.extra_charges))}` : ""}
                   {` · Payable ${formatINR(Number(x.amount_payable))} · Paid ${formatINR(Number(x.paid))} · Due ${formatINR(Number(x.outstanding))}`}
+                </p>
+                <p className="mt-1 text-sm text-mist">
+                  {x.model === "working_days"
+                    ? `${Number(usageByMembership.get(x.id)?.days_used ?? 0)} attended · ${Number(usageByMembership.get(x.id)?.days_remaining ?? 0)} remaining`
+                    : `${Number(x.days_remaining ?? 0)} calendar days remaining`}
                 </p>
                 {x.notes && <p className="mt-1 text-sm text-mist">{x.notes}</p>}
               </li>
@@ -173,7 +195,7 @@ export default async function MemberDetail({ params }: { params: Promise<{ id: s
   );
 }
 
-function Box({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
+function Box({ label, value, warn }: { label: string; value: string | number; warn?: boolean }) {
   return (
     <div className="rounded-xl border border-edge bg-panel p-5">
       <p className="text-sm text-mist">{label}</p>

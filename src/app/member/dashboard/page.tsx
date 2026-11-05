@@ -6,7 +6,6 @@ import { StatCard, StatusBadge } from "@/components/ui";
 import { ActionForm } from "@/components/action-form";
 import { Field, SelectField } from "@/components/ui";
 import { submitPaymentClaim } from "../payment-claims/actions";
-import { PaymentDateField } from "@/components/payment-date-field";
 import { MemberCharts } from "./member-charts";
 
 const nav = [
@@ -30,11 +29,11 @@ export default async function MemberDashboard() {
   sixMonthsAgo.setUTCMonth(sixMonthsAgo.getUTCMonth() - 5);
   const chartFrom = sixMonthsAgo.toISOString().slice(0, 10);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
-  const [{ data: attendance }, { data: diaryEntries }] = member?.id ? await Promise.all([
-    supabase.from("official_attendance").select("attendance_date, status").eq("member_id", member.id).gte("attendance_date", monthStart).lte("attendance_date", today),
-    supabase.from("workout_diary").select("activity_date").eq("member_id", member.id).gte("activity_date", chartFrom).lte("activity_date", today),
-  ]) : [{ data: [] }, { data: [] }];
-  const attendancePoints = [{ label: "This month", present: (attendance ?? []).filter((item) => item.status === "present").length, absent: (attendance ?? []).filter((item) => item.status === "absent").length }];
+  const { data: diaryEntries } = member?.id
+    ? await supabase.from("workout_diary").select("activity_date, category").eq("member_id", member.id).gte("activity_date", chartFrom).lte("activity_date", today)
+    : { data: [] };
+  const memberDiary = (diaryEntries ?? []) as { activity_date: string; category: string }[];
+  const attendancePoints = [{ label: "This month", present: memberDiary.filter((item) => item.activity_date >= monthStart && !["rest_day", "missed"].includes(item.category)).length, missed: memberDiary.filter((item) => item.activity_date >= monthStart && item.category === "missed").length }];
   const workoutCounts = new Map<string, number>();
   for (let i = 0; i < 6; i += 1) {
     const date = new Date(`${chartFrom}T00:00:00Z`);
@@ -61,12 +60,11 @@ export default async function MemberDashboard() {
           <MemberCharts attendance={attendancePoints} workouts={workoutPoints} paid={Number(membership.paid)} outstanding={Number(membership.outstanding)} />
           <section className="mt-8 max-w-2xl rounded-xl border border-edge bg-panel p-5">
             <h2 className="text-2xl">Submit a payment</h2>
-            <p className="mt-2 text-sm text-mist">Your claim remains pending until gym staff approve it.</p>
+            <p className="mt-2 text-sm text-mist">Tell us when the full membership amount has been paid. Staff will select and confirm the payment date.</p>
             <ActionForm action={submitPaymentClaim} submitLabel="Submit for approval" className="mt-4 grid gap-4 sm:grid-cols-2">
               <input type="hidden" name="membership_id" value={membership.id} />
-              <Field label="Amount (₹)" name="amount" type="number" min={1} step="0.01" required />
+              <div className="rounded-lg border border-edge bg-raised p-3 text-sm"><p className="text-mist">Full amount</p><p className="mt-1 text-xl font-semibold">₹{Number(membership.outstanding).toLocaleString("en-IN")}</p></div>
               <SelectField label="Method" name="method" options={[{ value: "cash", label: "Cash" }, { value: "upi", label: "UPI" }, { value: "bank", label: "Bank transfer" }, { value: "other", label: "Other" }]} />
-              <PaymentDateField membershipStart={membership.start_date} />
               <Field label="Reference" name="reference" />
               <div className="sm:col-span-2"><Field label="Notes" name="notes" /></div>
             </ActionForm>

@@ -5,6 +5,8 @@ import {
 import { SiteHeader } from "@/components/site-header";
 import { Photo, photos } from "@/components/photo";
 import { Wordmark } from "@/components/wordmark";
+import { GallerySlideshow } from "@/components/gallery-slideshow";
+import { createClient } from "@/lib/supabase/server";
 import { getContactInfo, getPublicPlans } from "@/lib/public-data";
 import { formatINR } from "@/lib/utils";
 
@@ -28,7 +30,16 @@ const access = [
 const gallery = [photos.exterior, photos.wide, photos.turf, photos.machines, photos.reception];
 
 export default async function HomePage() {
-  const [contact, plans] = await Promise.all([getContactInfo(), getPublicPlans()]);
+  const supabase = await createClient();
+  const [contact, plans, { data: galleryImages }] = await Promise.all([
+    getContactInfo(),
+    getPublicPlans(),
+    supabase.from("gallery_images").select("storage_path, title").eq("active", true).order("sort_order").order("created_at", { ascending: false }),
+  ]);
+  const uploadedGallery = (galleryImages ?? []).map((image) => ({
+    src: supabase.storage.from("gallery").getPublicUrl(image.storage_path).data.publicUrl,
+    alt: image.title || "Velocity gym gallery",
+  }));
 
   return (
     <>
@@ -145,6 +156,7 @@ export default async function HomePage() {
         {/* Gallery */}
         <section id="gallery" className="container-x py-16 sm:py-20">
           <h2 className="text-5xl sm:text-6xl">Gallery</h2>
+          <GallerySlideshow images={uploadedGallery} />
           <ul className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
             {gallery.map((p, i) => (
               <li key={p.src} className={i === 0 ? "col-span-2 lg:col-span-1" : ""}>

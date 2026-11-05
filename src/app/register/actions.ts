@@ -41,9 +41,9 @@ export async function registerMember(_prev: RegisterState, fd: FormData): Promis
     return {
       error: reason
         ? `Could not create your account: ${reason}`
-        : "Could not create your account because Supabase did not return a user. Check Phone authentication and the Supabase URL/key.",
+        : "Could not create your account because Supabase did not return a user. Check Email authentication and the Supabase URL/key.",
     };
   }
-  if (!data.session) redirect("/login?notice=registered");
+  if (!data.session) redirect("/login?notice=verify");
   redirect("/member/dashboard");
 }

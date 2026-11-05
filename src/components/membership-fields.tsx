@@ -14,9 +14,9 @@ export function MembershipFields({ plans }: { plans: PlanOption[] }) {
       <Field label="Start date" name="start_date" type="date" required defaultValue={todayIST()} />
       <Field label="End date (calendar)" name="end_date" type="date" hint="Blank = plan's duration from the start date." />
       <Field label="Total gym days (gym-days)" name="total_days" type="number" min={1} hint="Blank = plan's days." />
-      <Field label="Fee (₹)" name="fee" type="number" min={0} step="0.01" hint="Blank = plan's fee." />
-      <Field label="Discount (₹)" name="discount" type="number" min={0} step="0.01" />
-      <Field label="Extra charges (₹)" name="extra_charges" type="number" min={0} step="0.01" />
+      <Field label="Fee (₹)" name="fee" type="number" min={0} step="1" hint="Whole rupees only. Blank = plan's fee." />
+      <Field label="Discount (₹)" name="discount" type="number" min={0} step="1" />
+      <Field label="Extra charges (₹)" name="extra_charges" type="number" min={0} step="1" />
       <div className="sm:col-span-2"><Field label="Notes" name="notes" maxLength={500} /></div>
     </div>
   );

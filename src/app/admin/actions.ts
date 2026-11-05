@@ -15,7 +15,7 @@ type State = { error?: string; message?: string; data?: Record<string, string> }
 const blank = (v: unknown) => (v === "" || v == null ? undefined : v);
 const text = (max = 300) => z.preprocess((v) => (typeof v === "string" ? v.trim() || undefined : v), z.string().max(max).optional());
 const reqText = (label: string, max = 120) => z.string({ error: `${label} is required` }).trim().min(1, `${label} is required`).max(max);
-const money = z.preprocess(blank, z.coerce.number().min(0, "Amounts cannot be negative").max(10_000_000).optional());
+const money = z.preprocess(blank, z.coerce.number().int("Enter a whole-rupee amount.").min(0, "Amounts cannot be negative").max(10_000_000).optional());
 const int = z.preprocess(blank, z.coerce.number().int().positive().optional());
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date");
 const optDate = z.preprocess(blank, date.optional());
@@ -96,7 +96,7 @@ const createMemberSchema = z.object({
   address: text(300),
   joined_on: date,
   ...termsShape,
-  pay_amount: money,
+  pay_full_amount: z.preprocess(blank, z.string().optional()),
   pay_method: z.preprocess(blank, z.enum(["cash", "upi", "bank", "other"]).optional()),
   pay_reference: text(100),
 });
@@ -149,9 +149,9 @@ export async function createMember(_prev: State, fd: FormData): Promise<State> {
   }
 
   // 4. optional first payment
-  if (v.pay_amount && v.pay_amount > 0) {
+  if (v.pay_full_amount) {
     const { error: pErr } = await supabase.rpc("record_payment", {
-      p_membership_id: membershipId, p_amount: v.pay_amount, p_method: v.pay_method ?? "cash",
+      p_membership_id: membershipId, p_amount: terms.args.p_fee! - (terms.args.p_discount ?? 0) + (terms.args.p_extra ?? 0), p_method: v.pay_method ?? "cash",
       p_paid_on: todayIST(), p_reference: v.pay_reference ?? null, p_remarks: "Payment at joining",
     });
     if (pErr) return { error: `Member and membership created, but the payment failed: ${dbError(pErr)}. Record it from the member page.`, data };
@@ -215,7 +215,7 @@ const planSchema = z.object({
   id: optId,
   name: reqText("Plan name", 80),
   model: z.enum(["calendar", "working_days"], { error: "Choose a model" }),
-  default_fee: z.coerce.number({ error: "Enter the fee" }).min(0).max(10_000_000),
+  default_fee: z.coerce.number({ error: "Enter the fee" }).int("Enter a whole-rupee fee.").min(0).max(10_000_000),
   duration_months: int,
   total_days: int,
   description: text(300),
@@ -269,7 +269,7 @@ export async function deletePlan(_prev: State, fd: FormData): Promise<State> {
 const paymentSchema = z.object({
   membership_id: id,
   member_id: id,
-  amount: z.coerce.number({ error: "Enter the amount" }).positive("Enter an amount above zero").max(10_000_000),
+  amount: z.coerce.number({ error: "Enter the amount" }).int("Enter a whole-rupee amount").positive("Enter an amount above zero").max(10_000_000),
   method: z.enum(["cash", "upi", "bank", "other"], { error: "Choose a payment method" }),
   paid_on: date,
   reference: text(100),

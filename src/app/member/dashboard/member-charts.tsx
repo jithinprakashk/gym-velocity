@@ -1,10 +1,10 @@
 "use client";
 
-type AttendancePoint = { label: string; present: number; absent: number };
+type AttendancePoint = { label: string; present: number; missed: number };
 type WorkoutPoint = { label: string; count: number };
 
-function Donut({ present, absent }: { present: number; absent: number }) {
-  const total = present + absent;
+function Donut({ present, missed }: { present: number; missed: number }) {
+  const total = present + missed;
   const presentShare = total ? (present / total) * 100 : 0;
   return (
     <div className="relative size-44 shrink-0 rounded-full" style={{ background: `conic-gradient(#c8f135 0 ${presentShare}%, #f87171 ${presentShare}% 100%)` }}>
@@ -22,7 +22,7 @@ export function MemberCharts({
   attendance: AttendancePoint[]; workouts: WorkoutPoint[]; paid: number; outstanding: number;
 }) {
   const present = attendance.reduce((sum, item) => sum + item.present, 0);
-  const absent = attendance.reduce((sum, item) => sum + item.absent, 0);
+  const missed = attendance.reduce((sum, item) => sum + item.missed, 0);
   const maxWorkout = Math.max(...workouts.map((item) => item.count), 1);
   const totalDue = paid + outstanding;
   const paidShare = totalDue ? Math.min((paid / totalDue) * 100, 100) : 0;
@@ -37,11 +37,11 @@ export function MemberCharts({
         <article className="rounded-xl border border-edge bg-panel p-5">
           <h3 className="text-xl">Attendance</h3>
           <div className="mt-5 flex items-center gap-5">
-            <Donut present={present} absent={absent} />
+            <Donut present={present} missed={missed} />
             <div className="space-y-3 text-sm">
               <p><span className="mr-2 inline-block size-2.5 rounded-full bg-lime" />Present <strong className="ml-2">{present}</strong></p>
-              <p><span className="mr-2 inline-block size-2.5 rounded-full bg-red-400" />Absent <strong className="ml-2">{absent}</strong></p>
-              <p className="text-xs text-mist">Based on official marked attendance.</p>
+              <p><span className="mr-2 inline-block size-2.5 rounded-full bg-red-400" />Missed <strong className="ml-2">{missed}</strong></p>
+              <p className="text-xs text-mist">Based on your marked workout and missed-day entries.</p>
             </div>
           </div>
         </article>

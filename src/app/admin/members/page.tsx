@@ -10,7 +10,7 @@ type Row = {
   id: string; member_code: string; status: string;
   profiles: { full_name: string; phone: string | null } | null;
 };
-type Cur = { member_id: string; model: string; end_date: string | null; total_days: number | null; effective_status: string; outstanding: number };
+type Cur = { member_id: string; model: string; effective_end_date: string | null; total_days: number | null; effective_status: string; outstanding: number };
 
 export default async function MembersPage({
   searchParams,
@@ -19,7 +19,7 @@ export default async function MembersPage({
   const supabase = await createClient();
   const [{ data: members }, { data: current }] = await Promise.all([
     supabase.from("members").select("id, member_code, status, profiles(full_name, phone)").order("member_code"),
-    supabase.from("current_memberships").select("member_id, model, end_date, total_days, effective_status, outstanding"),
+    supabase.from("current_memberships").select("member_id, model, effective_end_date, total_days, effective_status, outstanding"),
   ]);
   const curBy = new Map<string, Cur>(((current ?? []) as Cur[]).map((c) => [c.member_id, c] as [string, Cur]));
 
@@ -64,7 +64,7 @@ export default async function MembersPage({
                     <p className="text-sm text-mist">{m.member_code}{m.profiles?.phone ? ` · ${m.profiles.phone}` : ""}</p>
                   </div>
                   <div className="text-sm text-mist">
-                    {c ? (c.model === "calendar" ? `Calendar · until ${formatDate(c.end_date)}` : `${c.total_days} gym days`) : "No membership"}
+                    {c ? (c.model === "calendar" ? `Calendar · until ${formatDate(c.effective_end_date)}` : `${c.total_days} gym days`) : "No membership"}
                     {c && Number(c.outstanding) > 0 && <span className="ml-2 font-semibold text-amber-300">Owes {formatINR(Number(c.outstanding))}</span>}
                   </div>
                   <div className="flex items-center gap-2">

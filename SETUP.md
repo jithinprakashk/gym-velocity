@@ -9,7 +9,7 @@ Cost: ₹0. You need Node.js (LTS) and VS Code.
 
 ## 2. Create the Supabase project
 1. supabase.com -> New project. Name: velocity. Pick a region near India. Save the database password.
-2. Authentication -> Sign In / Providers: enable **Email** sign-in with password and enable **Allow new users to sign up**. Phone authentication is not required. Member self-registration is enabled; new members can sign in with email immediately but remain pending until an admin approves them.
+2. Authentication -> Sign In / Providers: enable **Email** sign-in with password, **Allow new users to sign up**, and **Confirm email**. Phone authentication is not required. Members must verify their email before the gym can approve their registration.
 3. Find your keys: click **Connect** at the top of the project (or Project Settings -> Data API for the URL, and -> API Keys for the keys).
 
 ## 3. Add your keys
@@ -112,6 +112,10 @@ If any print errors, copy the red text to Claude and ask for a fix.
 Run `supabase/migrations/006_payment_date_anchoring.sql` after migration 005. The earliest approved payment date becomes the effective start date for both membership models. Calendar plans calculate their expiry and calendar days remaining from that date; working-day plans count verified attendance from that date. A payment entered after the configured membership start date is marked as delayed and shown with a warning while entering the date.
 
 Run `supabase/migrations/007_plan_management_function.sql` after migration 006. This enables reliable, audited creation, editing and safe deletion of membership plans through the admin portal. Plans already used by memberships or pending registrations cannot be deleted; deactivate them instead.
+
+Run migrations `008_whole_rupee_amounts.sql`, `009_full_payment_claims.sql`, `010_email_verification_before_approval.sql`, and `011_fix_attendance_usage.sql` in order after migration 007. These standardise whole-rupee payments, require full-payment claims, require email verification before approval, and calculate payment-anchored working-day usage.
+
+Run `supabase/migrations/012_attendance_library_gallery.sql` after migration 011. This adds the exercise library, member/admin attendance mismatch report, and the public Supabase Storage gallery. Create or verify the public `gallery` bucket through this migration before uploading images in Admin -> Gallery Management.
 
 ## Logo font
 Put your licensed Undergrad font file in `public/fonts/` as `Undergrad.woff2` (or .otf/.ttf). Until then a similar free font (Graduate) is used.

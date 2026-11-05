@@ -28,7 +28,7 @@ export function RegisterForm({ plans }: { plans: Plan[] }) {
   return (
     <div className="w-full max-w-lg rounded-xl border border-edge bg-panel p-6 sm:p-8">
       <h1 className="text-4xl">Create your member account</h1>
-      <p className="mt-2 text-mist">You can sign in immediately. A gym administrator must approve your registration and membership before you can use gym services.</p>
+      <p className="mt-2 text-mist">Verify your email first. A gym administrator will then approve your registration and membership.</p>
       <form ref={formRef} action={action} className="mt-6 grid gap-4" noValidate onSubmit={(event) => {
         const values: Record<string, string> = {};
         for (const [name, value] of new FormData(event.currentTarget).entries()) values[name] = String(value);

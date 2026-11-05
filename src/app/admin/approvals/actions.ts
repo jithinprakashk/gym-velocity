@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 type State = { error?: string; message?: string } | undefined;
 export async function approveRegistration(_prev: State, fd: FormData): Promise<State> {
   await requireRole("admin");
-  const p = z.object({ request_id: z.string().uuid(), plan_id: z.string().uuid(), fee: z.coerce.number().nonnegative() }).safeParse(Object.fromEntries(fd));
+  const p = z.object({ request_id: z.string().uuid(), plan_id: z.string().uuid(), fee: z.coerce.number().int("Fee must be a whole-rupee amount.").nonnegative() }).safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: "Choose a valid plan and fee." };
   const { error } = await (await createClient()).rpc("approve_registration", { p_request_id: p.data.request_id, p_plan_id: p.data.plan_id, p_fee: p.data.fee });
   if (error) return { error: error.message };
@@ -18,9 +18,9 @@ export async function approveRegistration(_prev: State, fd: FormData): Promise<S
 }
 export async function reviewClaim(_prev: State, fd: FormData): Promise<State> {
   await requireRole("admin");
-  const p = z.object({ claim_id: z.string().uuid(), status: z.enum(["approved", "rejected"]) }).safeParse(Object.fromEntries(fd));
+  const p = z.object({ claim_id: z.string().uuid(), status: z.enum(["approved", "rejected"]), paid_on: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose the payment date.") }).safeParse(Object.fromEntries(fd));
   if (!p.success) return { error: "Invalid payment claim." };
-  const { error } = await (await createClient()).rpc("review_payment_claim", { p_claim_id: p.data.claim_id, p_status: p.data.status });
+  const { error } = await (await createClient()).rpc("review_payment_claim", { p_claim_id: p.data.claim_id, p_status: p.data.status, p_paid_on: p.data.paid_on });
   if (error) return { error: error.message };
   revalidatePath("/admin/approvals");
   revalidatePath("/admin/payments");
