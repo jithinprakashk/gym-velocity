@@ -140,7 +140,7 @@ export default async function HomePage() {
                     <p className="mt-3 text-mist">
                       {p.model === "calendar"
                         ? `Valid for ${p.duration_months} ${p.duration_months === 1 ? "month" : "months"} from your start date.`
-                        : `${p.total_days} gym days. Only the days you attend are counted.`}
+                        : `${p.total_days} gym days.`}
                     </p>
                     {p.description && <p className="mt-2 text-mist">{p.description}</p>}
                   </li>
