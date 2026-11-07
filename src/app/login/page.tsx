@@ -30,7 +30,7 @@ export default async function LoginPage({
     <>
       <SiteHeader />
       <main id="main" className="container-x grid min-h-[70vh] place-items-center py-16">
-        <div className="w-full max-w-md rounded-xl border border-edge bg-panel p-6 sm:p-8">
+        <div className="auth-panel w-full max-w-md rounded-2xl border border-edge bg-panel p-6 sm:p-8">
           <h1 className="text-4xl">Sign in</h1>
           <p className="mt-2 text-mist">Members and staff sign in here.</p>
           {notice && (

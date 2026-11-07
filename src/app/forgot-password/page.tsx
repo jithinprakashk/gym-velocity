@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
     <>
       <SiteHeader />
       <main id="main" className="container-x grid min-h-[70vh] place-items-center py-16">
-        <div className="w-full max-w-md rounded-xl border border-edge bg-panel p-6 sm:p-8">
+        <div className="auth-panel w-full max-w-md rounded-2xl border border-edge bg-panel p-6 sm:p-8">
           <h1 className="text-4xl">Reset password</h1>
           <p className="mt-2 text-mist">If your account has an email address, we will email you a link. If you signed in with just your mobile number, ask the gym staff to give you a new password.</p>
           <form action={action} className="mt-6 space-y-4" noValidate>

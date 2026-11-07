@@ -46,10 +46,11 @@ export default async function HomePage() {
       <SiteHeader />
       <main id="main">
         {/* Hero */}
-        <section className="border-b border-edge">
+        <section className="home-hero border-b border-edge">
           <div className="container-x grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[1.15fr_1fr] lg:py-20">
             <div>
-              <h1 className="text-[3.4rem] leading-[0.9] sm:text-8xl lg:text-9xl">
+              <p className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[.2em] text-lime"><span className="inline-block size-2 rounded-full bg-lime" />Strength starts here</p>
+              <h1 className="max-w-3xl text-[3.1rem] leading-[0.92] sm:text-7xl lg:text-8xl">
                 Build strength.
                 <br />
                 Own your pace.

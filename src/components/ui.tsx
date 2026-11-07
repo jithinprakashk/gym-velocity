@@ -25,7 +25,7 @@ export function SelectField({
 }) {
   return (
     <div>
-      <label htmlFor={name} className="mb-1.5 block text-sm font-medium">{label}</label>
+      <label htmlFor={name} className="mb-1.5 block text-sm font-medium">{label}{required && <span aria-hidden className="text-lime"> *</span>}</label>
       <select id={name} name={name} defaultValue={defaultValue ?? ""} required={required} className="field">
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -58,9 +58,9 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function StatCard({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
   return (
-    <div className="rounded-xl border border-edge bg-panel p-5">
-      <p className="text-sm text-mist">{label}</p>
-      <p className="mt-1 font-display text-4xl font-extrabold">{value}</p>
+    <div className="stat-card rounded-xl border border-edge bg-panel p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-mist sm:text-sm">{label}</p>
+      <p className="stat-value mt-2 font-display text-3xl font-extrabold sm:text-4xl">{value}</p>
       {hint && <p className="mt-1 text-xs text-mist">{hint}</p>}
     </div>
   );
